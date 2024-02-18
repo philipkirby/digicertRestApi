@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+  restapi:
+    image: pdkirby/golangrestapi:latest
+    container_name: restApi
+    ports:
+      - "8081:8081"
+    networks:
+      - restApiNetwork
+    environment:
+      - mongoDSN=mongodb://pdkirby:DontLookAtMyPassword@dockerMongoDb:27017
+
+  mongodb:
+    image: mongo:latest
+    container_name: dockerMongoDb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: pdkirby
+      MONGO_INITDB_ROOT_PASSWORD: DontLookAtMyPassword
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - restApiNetwork
+
+volumes:
+  mongodb_data:
+
+networks:
+  restApiNetwork:
+    name: restApiNetwork
+
