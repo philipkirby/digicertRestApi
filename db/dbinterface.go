@@ -1,14 +1,15 @@
 package db
 
 import (
-	"dockerrestapi/restlib"
+	"dockerrestapi/lib"
 )
 
+// RestDbInterface built for book library.
 type RestDbInterface interface {
 	Disconnect()
-	GetAllBooks() ([]restlib.BookIdentifier, error)
-	CreateNewBook(book *restlib.Book) error
-	GetOneBook(bookIdentifier *restlib.BookIdentifier) (*restlib.Book, error)
-	UpdateExistingBook(book *restlib.Book) error
-	DeleteBook(bookIdentifier *restlib.BookIdentifier) error
+	GetAllBooks() ([]lib.BookIdentifier, error)
+	CreateNewBook(book *lib.Book) error
+	GetOneBook(bookIdentifier *lib.BookIdentifier) (*lib.Book, error)
+	UpdateExistingBook(book *lib.Book) error
+	DeleteBook(bookIdentifier *lib.BookIdentifier) error
 }

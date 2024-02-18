@@ -1,15 +1,40 @@
-# docker rest API
+# Welcome to My Dockerized REST API with MongoDB
 
-## About
-This yada yada
-docker network create restNet
-docker run -d --network="restNet" --name dockerMongoDB -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=pdkirby -e MONGO_INITDB_ROOT_PASSWORD=DontLookAtMyPassword mongo:latest
-docker run -d --network="restNet" --name restApi -p 8081:8081 -e mongoDSN=mongodb://pdkirby:DontLookAtMyPassword@dockerMongoDB:27017 pdkirby/golangrestapi:latest
+## Greetings  👋
+Thank you for exploring this technical interview project showcasing a Dockerized REST API using MongoDB.
+This project is designed as a response to the technical interview with DigiCert.
 
-for building a new rest docker image:
 
-docker build -t pdkirby/golangrestapi:yourtag .
+## Key Features
+* RESTful API: Utilising Go to create a RESTful API that performs basic CRUD operations as well as a full library list request.
+* MongoDB: The application utilises MongoDB as its database; if any other database is to be used, it can be easily implemented using the db interface in the db directory.
+* Docker Compose: For a prebuilt environment, see [docker-compose.yaml](docker-compose.yaml). This will set up the entire environment for you with `docker compose up -d`.
 
-or 
 
-docker compose up -d
+
+## Manual rebuilding
+To build and run the Docker environment manually, you can use the [DockerFile](Dockerfile).
+This will build the go programme in a golang:alpine container, and then the binary will be moved to a minimal image for execution.
+To build the Docker container, execute:
+
+`docker build -t pdkirby/golangrestapi:yourtag .`
+
+To create the network, execute:
+
+`docker network create restNet`
+
+To run the MongoDB instance, execute:
+
+`docker run -d -v mongodb_data:/data/db --network="restNet" --name dockerMongoDB -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=pdkirby -e MONGO_INITDB_ROOT_PASSWORD=DontLookAtMyPassword mongo:latest`
+
+To run the rest api, execute:
+
+`docker run -d --network="restNet" --name restApi -p 8081:8081 -e mongoDSN=mongodb://pdkirby:DontLookAtMyPassword@dockerMongoDB:27017 -e restPort=8081 pdkirby/golangrestapi:yourtag`
+
+## Misc
+### Postman
+If you would like to test the rest api with Postman, you can import my postman calls found in [rest.postman_collection_for_testing.json](rest.postman_collection_for_testing.json).
+
+### Local library
+In a larger system, the DB interface and lib would be in a separate library, as the odds are not just that the restapi would want access to the book library.
+But for the sake of this technical interview, both will be stored in this project directory.

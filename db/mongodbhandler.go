@@ -2,7 +2,7 @@ package db
 
 import (
 	"context"
-	"dockerrestapi/restlib"
+	"dockerrestapi/lib"
 	"errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -25,7 +25,7 @@ type MongoDB struct {
 func CreateMongoDBHandler(dsn string) (RestDbInterface, error) {
 	clientOptions := options.Client().ApplyURI(dsn)
 
-	log.Println("connecting...")
+	log.Println("connecting to mongo")
 
 	// Connect to MockDB
 	client, err := mongo.Connect(context.Background(), clientOptions)
@@ -34,7 +34,7 @@ func CreateMongoDBHandler(dsn string) (RestDbInterface, error) {
 		return nil, err
 	}
 
-	log.Println("pinging...")
+	log.Println("pinging mongo...")
 
 	//Check the connection
 	err = client.Ping(context.Background(), nil)
@@ -43,7 +43,7 @@ func CreateMongoDBHandler(dsn string) (RestDbInterface, error) {
 		return nil, err
 	}
 
-	log.Println("Connected to mongoDB!")
+	log.Println("Connected to mongoDB")
 	return &MongoDB{
 		client:     client,
 		collection: client.Database(dataBaseName).Collection(collectionName),
@@ -58,11 +58,11 @@ func (m *MongoDB) Disconnect() {
 }
 
 // GetAllBooks , retrieves all books in mongo, returns only identifiers
-func (m *MongoDB) GetAllBooks() ([]restlib.BookIdentifier, error) {
+func (m *MongoDB) GetAllBooks() ([]lib.BookIdentifier, error) {
 	// Find documents with specific fields
 
 	// Specify the fields to include (1) or exclude (0)
-	projection := bson.M{restlib.JsonBsonTagName: 1, restlib.JsonBsonTagAuthor: 1}
+	projection := bson.M{lib.JsonBsonTagName: 1, lib.JsonBsonTagAuthor: 1}
 
 	cursor, err := m.collection.Find(context.Background(), bson.M{}, options.Find().SetProjection(projection))
 	if err != nil {
@@ -70,7 +70,7 @@ func (m *MongoDB) GetAllBooks() ([]restlib.BookIdentifier, error) {
 	}
 	defer cursor.Close(context.Background())
 
-	var result []restlib.BookIdentifier
+	var result []lib.BookIdentifier
 	err = cursor.All(context.Background(), &result)
 	if err != nil {
 		log.Println(result)
@@ -81,15 +81,15 @@ func (m *MongoDB) GetAllBooks() ([]restlib.BookIdentifier, error) {
 }
 
 // GetOneBook retrieves single book given a book Identifier
-func (m *MongoDB) GetOneBook(bookIdentifier *restlib.BookIdentifier) (*restlib.Book, error) {
+func (m *MongoDB) GetOneBook(bookIdentifier *lib.BookIdentifier) (*lib.Book, error) {
 	// Get a single person by ID from the database
 
-	match := bson.M{restlib.JsonBsonTagName: bookIdentifier.Name, restlib.JsonBsonTagAuthor: bookIdentifier.Author}
-	receivedBook := &restlib.Book{}
+	match := bson.M{lib.JsonBsonTagName: bookIdentifier.Name, lib.JsonBsonTagAuthor: bookIdentifier.Author}
+	receivedBook := &lib.Book{}
 	err := m.collection.FindOne(context.Background(), match).Decode(receivedBook)
 	if err != nil {
 		if errors.Is(mongo.ErrNoDocuments, err) {
-			return nil, restlib.NoMatchingBook
+			return nil, lib.NoMatchingBook
 		}
 		return nil, err
 	}
@@ -98,8 +98,8 @@ func (m *MongoDB) GetOneBook(bookIdentifier *restlib.BookIdentifier) (*restlib.B
 }
 
 // CreateNewBook stores a new book in db
-func (m *MongoDB) CreateNewBook(book *restlib.Book) error {
-	inDb, err := m.isBookInDb(restlib.BookIdentifier{
+func (m *MongoDB) CreateNewBook(book *lib.Book) error {
+	inDb, err := m.isBookInDb(lib.BookIdentifier{
 		Name:   book.Name,
 		Author: book.Author,
 	})
@@ -107,9 +107,9 @@ func (m *MongoDB) CreateNewBook(book *restlib.Book) error {
 		return err
 	}
 	if inDb {
-		return restlib.BookAlreadyExists
+		return lib.BookAlreadyExists
 	}
-	book.UpdatedDate = time.Now().Format(restlib.DbTimeFormat)
+	book.UpdatedDate = time.Now().Format(lib.DbTimeFormat)
 
 	_, err = m.collection.InsertOne(context.Background(), book)
 	if err != nil {
@@ -120,9 +120,9 @@ func (m *MongoDB) CreateNewBook(book *restlib.Book) error {
 }
 
 // UpdateExistingBook updates existing  book in db
-func (m *MongoDB) UpdateExistingBook(book *restlib.Book) error {
+func (m *MongoDB) UpdateExistingBook(book *lib.Book) error {
 
-	inDb, err := m.isBookInDb(restlib.BookIdentifier{
+	inDb, err := m.isBookInDb(lib.BookIdentifier{
 		Name:   book.Name,
 		Author: book.Author,
 	})
@@ -130,18 +130,18 @@ func (m *MongoDB) UpdateExistingBook(book *restlib.Book) error {
 		return err
 	}
 	if !inDb {
-		return restlib.NoMatchingBook
+		return lib.NoMatchingBook
 	}
-	book.UpdatedDate = time.Now().Format(restlib.DbTimeFormat)
+	book.UpdatedDate = time.Now().Format(lib.DbTimeFormat)
 
 	_, err = m.collection.UpdateOne(
 		context.Background(),
-		bson.M{restlib.JsonBsonTagName: book.Name, restlib.JsonBsonTagAuthor: book.Author},
+		bson.M{lib.JsonBsonTagName: book.Name, lib.JsonBsonTagAuthor: book.Author},
 		bson.M{"$set": book},
 	)
 	if err != nil {
 		if errors.Is(mongo.ErrNoDocuments, err) {
-			return restlib.NoMatchingBook
+			return lib.NoMatchingBook
 		}
 		return err
 	}
@@ -149,10 +149,10 @@ func (m *MongoDB) UpdateExistingBook(book *restlib.Book) error {
 }
 
 // DeleteBook deletes existing book given Identifier
-func (m *MongoDB) DeleteBook(bookIdentifier *restlib.BookIdentifier) error {
+func (m *MongoDB) DeleteBook(bookIdentifier *lib.BookIdentifier) error {
 	// Delete a person by ID from the database
 
-	inDb, err := m.isBookInDb(restlib.BookIdentifier{
+	inDb, err := m.isBookInDb(lib.BookIdentifier{
 		Name:   bookIdentifier.Name,
 		Author: bookIdentifier.Author,
 	})
@@ -160,14 +160,14 @@ func (m *MongoDB) DeleteBook(bookIdentifier *restlib.BookIdentifier) error {
 		return err
 	}
 	if !inDb {
-		return restlib.NoMatchingBook
+		return lib.NoMatchingBook
 	}
 
-	match := bson.M{restlib.JsonBsonTagName: bookIdentifier.Name, restlib.JsonBsonTagAuthor: bookIdentifier.Author}
+	match := bson.M{lib.JsonBsonTagName: bookIdentifier.Name, lib.JsonBsonTagAuthor: bookIdentifier.Author}
 	result, err := m.collection.DeleteOne(context.Background(), match)
 	if err != nil {
 		if errors.Is(mongo.ErrNoDocuments, err) {
-			return restlib.NoMatchingBook
+			return lib.NoMatchingBook
 		}
 		return err
 	}
@@ -177,9 +177,9 @@ func (m *MongoDB) DeleteBook(bookIdentifier *restlib.BookIdentifier) error {
 }
 
 // checks to see if book Is in DB
-func (m *MongoDB) isBookInDb(book restlib.BookIdentifier) (bool, error) {
-	projection := bson.M{restlib.JsonBsonTagName: 1, restlib.JsonBsonTagAuthor: 1}
-	match := bson.M{restlib.JsonBsonTagName: book.Name, restlib.JsonBsonTagAuthor: book.Author}
+func (m *MongoDB) isBookInDb(book lib.BookIdentifier) (bool, error) {
+	projection := bson.M{lib.JsonBsonTagName: 1, lib.JsonBsonTagAuthor: 1}
+	match := bson.M{lib.JsonBsonTagName: book.Name, lib.JsonBsonTagAuthor: book.Author}
 	cursor := m.collection.FindOne(context.Background(), match, options.FindOne().SetProjection(projection))
 	if cursor.Err() != nil {
 		if errors.Is(cursor.Err(), mongo.ErrNoDocuments) {

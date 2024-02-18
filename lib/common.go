@@ -1,4 +1,4 @@
-package restlib
+package lib
 
 import (
 	"errors"
@@ -25,13 +25,8 @@ type Book struct {
 	UpdatedDate string `bson:"updateDate" json:"updateDate,omitempty"`
 }
 
-var (
+var ( // Errors
 	NoMatchingBook      = errors.New("no matching book in library")
 	BookAlreadyExists   = errors.New("book already exists library")
 	IncorrectParameters = errors.New("incorrect request parameter")
 )
-
-type ErrorResponse struct {
-	ReturnCode  int    `json:"returnCode"`
-	ErrorDetail string `json:"errorDetail"`
-}

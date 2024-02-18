@@ -3,7 +3,7 @@ package internal
 import (
 	"bytes"
 	"dockerrestapi/db"
-	"dockerrestapi/restlib"
+	"dockerrestapi/lib"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -18,37 +18,37 @@ import (
 var api *RestService
 
 var (
-	defaultBook1 = restlib.Book{
+	defaultBook1 = lib.Book{
 		Name:     "book1",
 		Author:   "philip",
 		Contents: "A bad read",
 	}
-	defaultBook1Updated = restlib.Book{
+	defaultBook1Updated = lib.Book{
 		Name:     "book1",
 		Author:   "philip",
 		Contents: "A good read",
 	}
-	defaultBook2 = restlib.Book{
+	defaultBook2 = lib.Book{
 		Name:     "book2",
 		Author:   "Gino",
 		Contents: "A wild read",
 	}
-	defaultBook3 = restlib.Book{
+	defaultBook3 = lib.Book{
 		Name:     "book3",
 		Author:   "Sheldon",
 		Contents: "A bizarre read",
 	}
-	mulFormedBook1 = restlib.Book{
+	mulFormedBook1 = lib.Book{
 		Name:     "",
 		Author:   paramAuthor,
 		Contents: "contents",
 	}
-	mulFormedBook2 = restlib.Book{
+	mulFormedBook2 = lib.Book{
 		Name:     paramName,
 		Author:   "",
 		Contents: "contents",
 	}
-	mulFormedBook3 = restlib.Book{
+	mulFormedBook3 = lib.Book{
 		Name:     paramName,
 		Author:   paramAuthor,
 		Contents: "",
@@ -73,7 +73,7 @@ func TestCreateBook(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	defaultBook1.UpdatedDate = time.Now().Format(restlib.DbTimeFormat)
+	defaultBook1.UpdatedDate = time.Now().Format(lib.DbTimeFormat)
 	if response != "" {
 		t.Error("expecting", "", "got", response)
 	}
@@ -83,8 +83,8 @@ func TestCreateBook(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if response != "\""+restlib.BookAlreadyExists.Error()+"\"" {
-		t.Error("expecting", "\""+restlib.BookAlreadyExists.Error()+"\"", "got", response)
+	if response != "\""+lib.BookAlreadyExists.Error()+"\"" {
+		t.Error("expecting", "\""+lib.BookAlreadyExists.Error()+"\"", "got", response)
 	}
 
 	//// Insert books 2 and 3
@@ -96,7 +96,7 @@ func TestCreateBook(t *testing.T) {
 	if err != nil {
 		t.Error()
 	}
-	defaultBook2.UpdatedDate = time.Now().Format(restlib.DbTimeFormat)
+	defaultBook2.UpdatedDate = time.Now().Format(lib.DbTimeFormat)
 	if response != "" {
 		t.Error("expecting", "", "got", response)
 	}
@@ -109,7 +109,7 @@ func TestCreateBook(t *testing.T) {
 	if err != nil {
 		t.Error()
 	}
-	defaultBook3.UpdatedDate = time.Now().Format(restlib.DbTimeFormat)
+	defaultBook3.UpdatedDate = time.Now().Format(lib.DbTimeFormat)
 	if response != "" {
 		t.Error("expecting", "", "got", response)
 	}
@@ -126,13 +126,13 @@ func TestUpdateBook(t *testing.T) {
 	if err != nil {
 		t.Error()
 	}
-	defaultBook1.UpdatedDate = time.Now().Format(restlib.DbTimeFormat)
+	defaultBook1.UpdatedDate = time.Now().Format(lib.DbTimeFormat)
 	if response != "" {
 		t.Error("expecting", "", "got", response)
 	}
 
 	//// fail on updating book that doesn't exist
-	fakeBook := restlib.Book{
+	fakeBook := lib.Book{
 		Name:     "NameFake",
 		Author:   "AuthorFake",
 		Contents: "ContentsFake",
@@ -145,8 +145,8 @@ func TestUpdateBook(t *testing.T) {
 	if err != nil {
 		t.Error()
 	}
-	if response != "\""+restlib.NoMatchingBook.Error()+"\"" {
-		t.Error("expecting", "\""+restlib.NoMatchingBook.Error()+"\"", "got", response)
+	if response != "\""+lib.NoMatchingBook.Error()+"\"" {
+		t.Error("expecting", "\""+lib.NoMatchingBook.Error()+"\"", "got", response)
 	}
 }
 
@@ -181,6 +181,16 @@ func TestGetBook(t *testing.T) {
 	if !sameBookFromHttpRequest(t, response, defaultBook3) {
 		t.Fail()
 	}
+
+	//fail on getting books that dont exist
+	paramMap = map[string]string{paramName: "doesnt exits", paramAuthor: "philip"}
+	response, err = testResponse(http.MethodPut, updateBookPath, api.getBook, nil, http.StatusBadRequest, paramMap)
+	if err != nil {
+		t.Error()
+	}
+	if response != "\""+lib.NoMatchingBook.Error()+"\"" {
+		t.Error("expecting", "\""+lib.NoMatchingBook.Error()+"\"", "got", response)
+	}
 }
 
 func TestDeleteBook(t *testing.T) {
@@ -196,20 +206,20 @@ func TestDeleteBook(t *testing.T) {
 	if err != nil {
 		t.Error()
 	}
-	if response != "\""+restlib.NoMatchingBook.Error()+"\"" {
-		t.Error("expecting", restlib.NoMatchingBook.Error(), "got", response)
+	if response != "\""+lib.NoMatchingBook.Error()+"\"" {
+		t.Error("expecting", lib.NoMatchingBook.Error(), "got", response)
 	}
 
 }
 
 func TestGetBooks(t *testing.T) {
-	var listOfDefaultBooks []restlib.BookIdentifier
+	var listOfDefaultBooks []lib.BookIdentifier
 
-	listOfDefaultBooks = append(listOfDefaultBooks, restlib.BookIdentifier{
+	listOfDefaultBooks = append(listOfDefaultBooks, lib.BookIdentifier{
 		Name:   defaultBook1Updated.Name,
 		Author: defaultBook1Updated.Author,
 	})
-	listOfDefaultBooks = append(listOfDefaultBooks, restlib.BookIdentifier{
+	listOfDefaultBooks = append(listOfDefaultBooks, lib.BookIdentifier{
 		Name:   defaultBook2.Name,
 		Author: defaultBook2.Author,
 	})
@@ -219,7 +229,7 @@ func TestGetBooks(t *testing.T) {
 		t.Error()
 	}
 
-	var responseList []restlib.BookIdentifier
+	var responseList []lib.BookIdentifier
 	err = json.Unmarshal([]byte(response), &responseList)
 	if err != nil {
 		t.Error(err)
@@ -244,7 +254,7 @@ func createMockApi() (*RestService, error) {
 	if err != nil {
 		return nil, err
 	}
-	service, err := CreateRestApiService(mockConn)
+	service, err := CreateRestApiService(mockConn, "8081")
 	if err != nil {
 		return nil, err
 	}
@@ -301,7 +311,7 @@ func TestUnmarshalAndValidateStoreBookRequest(t *testing.T) {
 
 }
 
-func isEqualBook(book1, book2 restlib.Book) bool {
+func isEqualBook(book1, book2 lib.Book) bool {
 	return book1.Name == book2.Name && book1.Author == book2.Author && book1.Contents == book2.Contents
 }
 
@@ -362,8 +372,8 @@ func testResponse(httpMethod, url string, funcCall func(writer http.ResponseWrit
 	return responseWriter.Body.String(), nil
 }
 
-func sameBookFromHttpRequest(t *testing.T, response string, matchedBook restlib.Book) bool {
-	bookRetrieved := &restlib.Book{}
+func sameBookFromHttpRequest(t *testing.T, response string, matchedBook lib.Book) bool {
+	bookRetrieved := &lib.Book{}
 	err := json.Unmarshal([]byte(response), bookRetrieved)
 	if err != nil {
 		t.Fail()

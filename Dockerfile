@@ -1,12 +1,12 @@
-#Build stage
+# Build stage
 FROM golang:alpine3.19 AS build
 
 WORKDIR /app
 
 COPY . .
 
-RUN go build
-# minimal image with Alpine Linux
+RUN go build && go test -v ./internal/
+# Minimal image with Alpine Linux
 FROM alpine:latest
 
 WORKDIR /app

@@ -2,7 +2,7 @@ package internal
 
 import (
 	"dockerrestapi/db"
-	"dockerrestapi/restlib"
+	"dockerrestapi/lib"
 	"encoding/json"
 	"errors"
 	"github.com/gorilla/mux"
@@ -12,7 +12,6 @@ import (
 )
 
 const (
-	port           = ":8081"
 	BasePath       = "/api/library"
 	getBooksPath   = BasePath + "/getlist"
 	getBookPath    = BasePath + "/get/{" + paramName + "}/{" + paramAuthor + "}"
@@ -26,31 +25,35 @@ const (
 type RestService struct {
 	db     db.RestDbInterface
 	router *mux.Router
+	port   string
 }
 
 // Start starts rest api
 func (r *RestService) Start() {
 	go func() {
-		err := http.ListenAndServe(port, r.router)
+		err := http.ListenAndServe(":"+r.port, r.router)
 		if err != nil {
-			log.Println("http closed,", err.Error())
+			panic(err)
 		}
 	}()
+	log.Printf("rest started on port %s\n", r.port)
 }
 
 // Stop stops rest api
 func (r *RestService) Stop() {
 	r.db.Disconnect()
+	stdInfo("stopped restapi")
 }
 
 // CreateRestApiService creates a restapi given a db interface
-func CreateRestApiService(db db.RestDbInterface) (*RestService, error) {
+func CreateRestApiService(db db.RestDbInterface, port string) (*RestService, error) {
 
+	stdInfo("creating rest api")
 	router := mux.NewRouter()
-
 	restAPi := &RestService{
 		db:     db,
 		router: router,
+		port:   port,
 	}
 
 	// Define CRUD endpoints
@@ -60,16 +63,16 @@ func CreateRestApiService(db db.RestDbInterface) (*RestService, error) {
 	router.HandleFunc(updateBookPath, restAPi.updateBook).Methods(http.MethodPut)
 	router.HandleFunc(deleteBookPath, restAPi.deleteBook).Methods(http.MethodDelete)
 	// Start the HTTP server
-	log.Printf("Server started on port %s\n", port)
 	return restAPi, nil
 }
 
 // getBooks Retrieves a full list (name and author) of every book stored in db
 func (r *RestService) getBooks(writer http.ResponseWriter, request *http.Request) {
-	debug("received get Books request")
+	stdInfo("received get Books request")
 	books, err := r.db.GetAllBooks()
 	if err != nil {
-		r.restResponse(writer, http.StatusNotFound, err.Error())
+		stdError(err.Error())
+		r.restResponse(writer, http.StatusInternalServerError, err.Error())
 		return
 	}
 	r.restResponse(writer, http.StatusOK, books)
@@ -78,21 +81,22 @@ func (r *RestService) getBooks(writer http.ResponseWriter, request *http.Request
 // getBook Retrieves a single book from the db given the name and author in the path.
 // eg : api/library/get/{name}/{author}
 func (r *RestService) getBook(writer http.ResponseWriter, request *http.Request) {
-	debug("received get Book request")
+	stdInfo("received get Book request")
 	params := mux.Vars(request)
 
 	bookIdentifier, err := r.createBookIdentifierFromParams(params)
 	if err != nil {
-		r.restResponse(writer, http.StatusBadRequest, restlib.IncorrectParameters)
+		r.restResponse(writer, http.StatusBadRequest, lib.IncorrectParameters)
 		return
 	}
 
 	returnedBook, err := r.db.GetOneBook(bookIdentifier)
 	if err != nil {
-		if errors.Is(err, restlib.NoMatchingBook) {
+		if errors.Is(err, lib.NoMatchingBook) {
 			r.restResponse(writer, http.StatusBadRequest, err.Error())
 			return
 		}
+		stdError(err.Error())
 		r.restResponse(writer, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -101,8 +105,7 @@ func (r *RestService) getBook(writer http.ResponseWriter, request *http.Request)
 
 // createBook Creates stores a new book into the db
 func (r *RestService) createBook(writer http.ResponseWriter, request *http.Request) {
-
-	debug("received create Books request")
+	stdInfo("received create Books request")
 
 	book, err := r.unmarshalAndValidateStoreBookRequest(request.Body)
 	if err != nil {
@@ -112,10 +115,11 @@ func (r *RestService) createBook(writer http.ResponseWriter, request *http.Reque
 
 	err = r.db.CreateNewBook(book)
 	if err != nil {
-		if errors.Is(restlib.BookAlreadyExists, err) {
+		if errors.Is(lib.BookAlreadyExists, err) {
 			r.restResponse(writer, http.StatusBadRequest, err.Error())
 			return
 		}
+		stdError(err.Error())
 		r.restResponse(writer, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -125,19 +129,21 @@ func (r *RestService) createBook(writer http.ResponseWriter, request *http.Reque
 
 // updateBook Updates an existing book in the db
 func (r *RestService) updateBook(writer http.ResponseWriter, request *http.Request) {
-	// Update a person by ID in the database
+	stdInfo("received update Book request")
 	book, err := r.unmarshalAndValidateStoreBookRequest(request.Body)
 	if err != nil {
+		stdError(err.Error())
 		r.restResponse(writer, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	err = r.db.UpdateExistingBook(book)
 	if err != nil {
-		if errors.Is(err, restlib.NoMatchingBook) {
+		if errors.Is(err, lib.NoMatchingBook) {
 			r.restResponse(writer, http.StatusBadRequest, err.Error())
 			return
 		}
+		stdError(err.Error())
 		r.restResponse(writer, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -147,17 +153,17 @@ func (r *RestService) updateBook(writer http.ResponseWriter, request *http.Reque
 // deleteBook deletes an existing book in the db given the name and author in the path.
 // eg : api/library/get/{name}/{author}
 func (r *RestService) deleteBook(writer http.ResponseWriter, request *http.Request) {
-	debug("received delete Book request")
+	stdInfo("received delete Book request")
 	params := mux.Vars(request)
 	bookIdentifier, err := r.createBookIdentifierFromParams(params)
 	if err != nil {
-		r.restResponse(writer, http.StatusBadRequest, restlib.IncorrectParameters)
+		r.restResponse(writer, http.StatusBadRequest, lib.IncorrectParameters)
 		return
 	}
 
 	err = r.db.DeleteBook(bookIdentifier)
 	if err != nil {
-		if errors.Is(err, restlib.NoMatchingBook) {
+		if errors.Is(err, lib.NoMatchingBook) {
 			r.restResponse(writer, http.StatusNotFound, err.Error())
 			return
 		}
@@ -176,7 +182,7 @@ func (r *RestService) restResponse(writer http.ResponseWriter, status int, data 
 	if data == nil {
 		_, err := writer.Write(nil)
 		if err != nil {
-			debug("|Error| cant respond " + err.Error())
+			stdInfo("|Error| cant respond " + err.Error())
 		}
 		return
 	}
@@ -186,19 +192,19 @@ func (r *RestService) restResponse(writer http.ResponseWriter, status int, data 
 		writer.WriteHeader(http.StatusInternalServerError)
 		err = json.NewEncoder(writer).Encode(err.Error())
 		if err != nil {
-			debug("|Error| cant respond " + err.Error())
+			stdInfo("|Error| cant respond " + err.Error())
 		}
 		return
 	}
 	_, err = writer.Write(responseBytes)
 	if err != nil {
-		debug("|Error| cant respond " + err.Error())
+		stdInfo("|Error| cant respond " + err.Error())
 	}
 }
 
 // unmarshalAndValidateStoreBookRequest unmarshal's json from an io body, validates it has no empty fields, and return a pointer to that book
-func (r *RestService) unmarshalAndValidateStoreBookRequest(body io.ReadCloser) (*restlib.Book, error) {
-	book := &restlib.Book{}
+func (r *RestService) unmarshalAndValidateStoreBookRequest(body io.ReadCloser) (*lib.Book, error) {
+	book := &lib.Book{}
 	err := json.NewDecoder(body).Decode(book)
 	if err != nil {
 		return nil, err
@@ -210,7 +216,7 @@ func (r *RestService) unmarshalAndValidateStoreBookRequest(body io.ReadCloser) (
 }
 
 // createBookIdentifierFromParams returns a bookIdentifier object, given a map of parameters that must contain "name" and "author" keys with non-empty values.
-func (r *RestService) createBookIdentifierFromParams(params map[string]string) (*restlib.BookIdentifier, error) {
+func (r *RestService) createBookIdentifierFromParams(params map[string]string) (*lib.BookIdentifier, error) {
 	var name, author string
 	var exists bool
 	if name, exists = params[paramName]; !exists {
@@ -222,12 +228,18 @@ func (r *RestService) createBookIdentifierFromParams(params map[string]string) (
 	if name == "" || author == "" {
 		return nil, errors.New("empty argument")
 	}
-	return &restlib.BookIdentifier{
+	return &lib.BookIdentifier{
 		Name:   name,
 		Author: author,
 	}, nil
 }
 
-func debug(s string) {
-	log.Println("|DEBUG|", s)
+// stdInfo prints string to standard out , prefix |Info|
+func stdInfo(s string) {
+	log.Println("|Info|", s)
+}
+
+// stdError prints string to standard out , prefix |Error|
+func stdError(s string) {
+	log.Println("|Info|", s)
 }

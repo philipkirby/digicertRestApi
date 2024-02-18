@@ -10,6 +10,7 @@ services:
       - restApiNetwork
     environment:
       - mongoDSN=mongodb://pdkirby:DontLookAtMyPassword@dockerMongoDb:27017
+      - restPort=8081
 
   mongodb:
     image: mongo:latest
