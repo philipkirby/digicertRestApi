@@ -40,13 +40,13 @@ In a larger system, the DB interface and lib would be in a separate library, as 
 But for the sake of this technical interview, both will be stored in this project directory.
 
 
-## restApi Data
-See bellow examples of rest calls:
+## RestApi Data
+See below for examples of rest calls:
 
 #### List
 GET: `http://localhost:8080/api/library/getlist?Content-Type=application/json`
 
-#### create
+#### Create
 PUT: `http://localhost:8081/api/library/create?Content-Type=application/json`
 
 body:
