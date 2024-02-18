@@ -44,10 +44,10 @@ But for the sake of this technical interview, both will be stored in this projec
 See bellow examples of rest calls:
 
 #### List
-GET: http://localhost:8080/api/library/getlist?Content-Type=application/json
+GET: `http://localhost:8080/api/library/getlist?Content-Type=application/json`
 
 #### create
-PUT: http://localhost:8081/api/library/create?Content-Type=application/json
+PUT: `http://localhost:8081/api/library/create?Content-Type=application/json`
 
 body:
 {
@@ -57,10 +57,10 @@ body:
 }
 
 #### Retrieve
-GET : http://localhost:8081/api/library/get/harry potter 2/JKR?Content-Type=application/json
+GET : `http://localhost:8081/api/library/get/harry potter 2/JKR?Content-Type=application/json`
 
 #### Update
-PUT: http://localhost:8080/api/library/update?Content-Type=application/json
+PUT: `http://localhost:8080/api/library/update?Content-Type=application/json`
 
 body:
 {
@@ -70,5 +70,5 @@ body:
 }
 
 #### Delete
-PUT: http://localhost:8081/api/library/delete/harry potter 2/JKR?Content-Type=application/json
+PUT: `http://localhost:8081/api/library/delete/harry potter 2/JKR?Content-Type=application/json`
 
