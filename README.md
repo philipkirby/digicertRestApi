@@ -38,3 +38,37 @@ If you would like to test the rest api with Postman, you can import my postman c
 ### Local library
 In a larger system, the DB interface and lib would be in a separate library, as the odds are not just that the restapi would want access to the book library.
 But for the sake of this technical interview, both will be stored in this project directory.
+
+
+## restApi Data
+See bellow examples of rest calls:
+
+#### List
+GET: http://localhost:8080/api/library/getlist?Content-Type=application/json
+
+#### create
+PUT: http://localhost:8081/api/library/create?Content-Type=application/json
+
+body:
+{
+"name": "harry potter 2",
+"author": "JKR",
+"contents": "A boy once nearly died."
+}
+
+#### Retrieve
+GET : http://localhost:8081/api/library/get/harry potter 2/JKR?Content-Type=application/json
+
+#### Update
+PUT: http://localhost:8080/api/library/update?Content-Type=application/json
+
+body:
+{
+"name": "harry potter 2",
+"author": "JKR",
+"contents": "A boy once died."
+}
+
+#### Delete
+PUT: http://localhost:8081/api/library/delete/harry potter 2/JKR?Content-Type=application/json
+
