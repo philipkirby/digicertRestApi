@@ -240,5 +240,5 @@ func stdInfo(s string) {
 
 // stdError prints string to standard out , prefix |Error|
 func stdError(s string) {
-	log.Println("|Info|", s)
+	log.Println("|Error|", s)
 }
