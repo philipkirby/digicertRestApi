@@ -39,8 +39,6 @@ func (m *MockDB) GetOneBook(bookIdentifier *lib.BookIdentifier) (*lib.Book, erro
 }
 
 func (m *MockDB) CreateNewBook(book *lib.Book) error {
-	// Create a new person and insert into the database
-
 	inDb, err := m.isBookInDb(lib.BookIdentifier{
 		Name:   book.Name,
 		Author: book.Author,
@@ -62,8 +60,6 @@ func (m *MockDB) CreateNewBook(book *lib.Book) error {
 }
 
 func (m *MockDB) UpdateExistingBook(book *lib.Book) error {
-	// Update a person by ID in the database
-
 	inDb, err := m.isBookInDb(lib.BookIdentifier{
 		Name:   book.Name,
 		Author: book.Author,
@@ -84,7 +80,6 @@ func (m *MockDB) UpdateExistingBook(book *lib.Book) error {
 }
 
 func (m *MockDB) DeleteBook(bookIdentifier *lib.BookIdentifier) error {
-	// Delete a person by ID from the database
 	inDb, err := m.isBookInDb(*bookIdentifier)
 	if err != nil {
 		return lib.NoMatchingBook

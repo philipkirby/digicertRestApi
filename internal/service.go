@@ -56,13 +56,12 @@ func CreateRestApiService(db db.RestDbInterface, port string) (*RestService, err
 		port:   port,
 	}
 
-	// Define CRUD endpoints
+	// Define endpoints
 	router.HandleFunc(getBooksPath, restAPi.getBooks).Methods(http.MethodGet)
 	router.HandleFunc(createBookPath, restAPi.createBook).Methods(http.MethodPut)
 	router.HandleFunc(getBookPath, restAPi.getBook).Methods(http.MethodGet)
 	router.HandleFunc(updateBookPath, restAPi.updateBook).Methods(http.MethodPut)
 	router.HandleFunc(deleteBookPath, restAPi.deleteBook).Methods(http.MethodDelete)
-	// Start the HTTP server
 	return restAPi, nil
 }
 

@@ -59,8 +59,6 @@ func (m *MongoDB) Disconnect() {
 
 // GetAllBooks , retrieves all books in mongo, returns only identifiers
 func (m *MongoDB) GetAllBooks() ([]lib.BookIdentifier, error) {
-	// Find documents with specific fields
-
 	// Specify the fields to include (1) or exclude (0)
 	projection := bson.M{lib.JsonBsonTagName: 1, lib.JsonBsonTagAuthor: 1}
 
@@ -82,8 +80,6 @@ func (m *MongoDB) GetAllBooks() ([]lib.BookIdentifier, error) {
 
 // GetOneBook retrieves single book given a book Identifier
 func (m *MongoDB) GetOneBook(bookIdentifier *lib.BookIdentifier) (*lib.Book, error) {
-	// Get a single person by ID from the database
-
 	match := bson.M{lib.JsonBsonTagName: bookIdentifier.Name, lib.JsonBsonTagAuthor: bookIdentifier.Author}
 	receivedBook := &lib.Book{}
 	err := m.collection.FindOne(context.Background(), match).Decode(receivedBook)
@@ -150,8 +146,6 @@ func (m *MongoDB) UpdateExistingBook(book *lib.Book) error {
 
 // DeleteBook deletes existing book given Identifier
 func (m *MongoDB) DeleteBook(bookIdentifier *lib.BookIdentifier) error {
-	// Delete a person by ID from the database
-
 	inDb, err := m.isBookInDb(lib.BookIdentifier{
 		Name:   bookIdentifier.Name,
 		Author: bookIdentifier.Author,
@@ -176,7 +170,7 @@ func (m *MongoDB) DeleteBook(bookIdentifier *lib.BookIdentifier) error {
 	return nil
 }
 
-// checks to see if book Is in DB
+// isBookInDb checks to see if book Is in DB
 func (m *MongoDB) isBookInDb(book lib.BookIdentifier) (bool, error) {
 	projection := bson.M{lib.JsonBsonTagName: 1, lib.JsonBsonTagAuthor: 1}
 	match := bson.M{lib.JsonBsonTagName: book.Name, lib.JsonBsonTagAuthor: book.Author}
